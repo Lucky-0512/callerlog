@@ -17,8 +17,8 @@ def get_analytics_overview(
     """Calculates call intelligence, outcomes breakdown, and 8-stage drop-off funnel."""
     db_records = db.query(CallRecord).all()
     
-    # If source is 'benchmark_100' or db is empty, use the 100 benchmark dataset
-    use_benchmark = (source == "benchmark_100") or (len(db_records) == 0 and source == "all")
+    # Only use benchmark data if user explicitly requested benchmark_100
+    use_benchmark = (source == "benchmark_100")
 
     outcomes: Dict[str, int] = {}
     company_kinds: Dict[str, int] = {}

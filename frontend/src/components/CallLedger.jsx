@@ -15,6 +15,7 @@ export default function CallLedger({ onSelectCallForInspection, onResumeCall }) 
   const [callToDelete, setCallToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState('');
+  const [fetchError, setFetchError] = useState(null);
 
   const fetchCalls = async () => {
     setLoading(true);
@@ -26,9 +27,11 @@ export default function CallLedger({ onSelectCallForInspection, onResumeCall }) 
       if (selectedStatus) params.status = selectedStatus;
       
       const data = await api.getCalls(params);
-      setCalls(data);
+      setCalls(data || []);
+      setFetchError(null);
     } catch (err) {
       console.error('Failed to fetch calls:', err);
+      setFetchError(err.message || 'Network error');
     } finally {
       setLoading(false);
     }
@@ -74,6 +77,30 @@ export default function CallLedger({ onSelectCallForInspection, onResumeCall }) 
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 20px 40px 20px' }}>
+      {fetchError && (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.12)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '12px',
+          padding: '14px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          color: '#fca5a5',
+          fontSize: '0.85rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertCircle size={18} color="#ef4444" />
+            <span>
+              <strong>Backend Offline:</strong> Could not load calls from Supabase ({fetchError}). Check your Render service URL in Settings.
+            </span>
+          </div>
+          <button onClick={fetchCalls} className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '0.78rem' }}>
+            Retry
+          </button>
+        </div>
+      )}
       
       {/* Header & Filter Controls */}
       <div className="glass-panel" style={{ padding: '20px 24px', marginBottom: '20px' }}>

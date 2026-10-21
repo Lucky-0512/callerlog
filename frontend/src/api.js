@@ -1,6 +1,17 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+export function getApiBaseUrl() {
+  const custom = localStorage.getItem('callerlog_api_url');
+  if (custom && custom.trim()) {
+    let clean = custom.trim().replace(/\/+$/, '');
+    if (!clean.endsWith('/api')) {
+      clean = `${clean}/api`;
+    }
+    return clean;
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+}
 
 export async function fetchWithAuth(url, options = {}) {
+  const baseUrl = getApiBaseUrl();
   const customKey = localStorage.getItem('callerlog_gemini_key') || '';
   const headers = {
     'Content-Type': 'application/json',
@@ -8,7 +19,7 @@ export async function fetchWithAuth(url, options = {}) {
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const response = await fetch(`${baseUrl}${url}`, {
     ...options,
     headers,
   });
@@ -22,6 +33,15 @@ export async function fetchWithAuth(url, options = {}) {
 }
 
 export const api = {
+  // Health Check
+  checkHealth: async () => {
+    const baseUrl = getApiBaseUrl();
+    const rootUrl = baseUrl.replace(/\/api\/?$/, '');
+    const res = await fetch(`${rootUrl}/`, { method: 'GET' });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    return res.json();
+  },
+
   // Transcripts & Stages
   getStages: () => fetchWithAuth('/transcripts/stages'),
   getTranscripts: (params = {}) => {

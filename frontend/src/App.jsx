@@ -6,7 +6,8 @@ import FunnelAnalytics from './components/FunnelAnalytics';
 import PostCallModal from './components/PostCallModal';
 import SettingsModal from './components/SettingsModal';
 import CustomTranscriptModal from './components/CustomTranscriptModal';
-import { api } from './api';
+import { AlertTriangle } from 'lucide-react';
+import { api, getApiBaseUrl } from './api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('companion'); // companion, ledger, analytics
@@ -14,6 +15,9 @@ export default function App() {
   const [transcriptsList, setTranscriptsList] = useState([]);
   const [selectedTranscript, setSelectedTranscript] = useState(null);
   
+  // Connection state
+  const [backendConnected, setBackendConnected] = useState(true);
+
   // Modals and selection state
   const [activeDossier, setActiveDossier] = useState(null);
   const [activeCallToResume, setActiveCallToResume] = useState(null);
@@ -32,9 +36,10 @@ export default function App() {
         ]);
         setStages(stagesData);
         setTranscriptsList(summaries);
-        // Initially keep selectedTranscript null so the left screen starts completely blank!
+        setBackendConnected(true);
       } catch (err) {
         console.error('Initialization error:', err);
+        setBackendConnected(false);
       } finally {
         setLoading(false);
       }
@@ -59,7 +64,6 @@ export default function App() {
 
   // Handle inspecting call from ledger
   const handleSelectCallForInspection = (callRecord) => {
-    // Map callRecord to analysis dossier format
     const mapped = {
       transcript_id: callRecord.transcript_id,
       call_id: callRecord.call_id,
@@ -123,10 +127,39 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Backend Disconnected Notice */}
+      {!backendConnected && (
+        <div style={{
+          background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%)',
+          borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
+          padding: '10px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '0.84rem',
+          color: '#fca5a5'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} color="#ef4444" />
+            <span>
+              <strong>Backend Disconnected:</strong> CallerLog is trying to reach <code>{getApiBaseUrl()}</code>. Calls will not save to Supabase until connected to your live Render backend.
+            </span>
+          </div>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="btn btn-secondary"
+            style={{ padding: '4px 12px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+          >
+            Configure Render URL
+          </button>
+        </div>
+      )}
+
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        backendConnected={backendConnected}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCustomModal={() => setIsCustomModalOpen(true)}
       />
@@ -176,6 +209,7 @@ export default function App() {
       {isSettingsOpen && (
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
+          onConfigSaved={() => setBackendConnected(true)}
         />
       )}
 
