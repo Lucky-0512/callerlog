@@ -7,9 +7,12 @@ if not db_url:
     from app.config import BASE_DIR
     db_url = f"sqlite:///{BASE_DIR}/callerlog.db"
 
-# Supabase and Render sometimes provide URLs starting with postgres:// instead of postgresql://
+# Supabase and Render sometimes provide URLs starting with postgres:// or postgresql://
+# If no specific driver is designated, explicitly enforce +psycopg2
 if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
+    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 engine_kwargs = {}
 if db_url.startswith("sqlite"):
