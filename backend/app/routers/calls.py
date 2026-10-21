@@ -251,9 +251,11 @@ def save_reviewed_call(payload: SaveReviewedCallRequest, db: Session = Depends(g
         if not assigned_call_id:
             assigned_call_id = generate_next_call_id(db)
 
+        initial_status = "CLOSED" if (payload.max_stage_number >= 8 or payload.outcome in hard_terminal_outcomes) else "ACTIVE"
+
         call_record = CallRecord(
             call_id=assigned_call_id,
-            call_id_status=status,
+            call_id_status=initial_status,
             attempt_count=1,
             last_turn_index=payload.last_turn_index if payload.last_turn_index is not None else -1,
             company_id=company.id,
